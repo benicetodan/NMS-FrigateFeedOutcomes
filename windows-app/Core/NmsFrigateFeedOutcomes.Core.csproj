@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\data\nms_reality_gcproducttable.MXML" LogicalName="NmsFrigateFeedOutcomes.products.MXML" />
+    <EmbeddedResource Include="..\..\assets\metadata\reality\tables\frigatetraittable.MXML" LogicalName="NmsFrigateFeedOutcomes.traits.MXML" />
+    <EmbeddedResource Include="..\..\assets\gcfleetglobals.global.MXML" LogicalName="NmsFrigateFeedOutcomes.globals.MXML" />
+    <EmbeddedResource Include="Data\save-key-mapping.json" LogicalName="NmsFrigateFeedOutcomes.save-key-mapping.json" />
+    <EmbeddedResource Include="Data\localization-en.json" LogicalName="NmsFrigateFeedOutcomes.localization-en.json" />
+  </ItemGroup>
+</Project>

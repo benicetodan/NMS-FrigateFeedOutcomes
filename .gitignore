@@ -1,0 +1,14 @@
+/dist/
+/dist-*/
+/assets/
+/data/
+/windows-app/Core/Data/localization-en.json
+/windows-app/dist*/
+/windows-app/publish/
+**/bin/
+**/obj/
+**/.vs/
+/outcomes.json
+/frigate_outcomes_foods.csv
+/frigate_outcomes_trait_candidates.csv
+/save2.hg
