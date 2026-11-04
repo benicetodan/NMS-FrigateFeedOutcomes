@@ -2,6 +2,8 @@
 
 The WPF application is a standalone Windows x64 executable for living frigates, the only frigate class that can be fed. Building it requires local copies of the game-derived product, frigate-trait, and fleet-stat tables plus `Core\Data\localization-en.json`; these files are excluded from this repository. Once built, the published executable embeds them and does not need adjacent data files. Food and trait labels use an English localization subset; IDs remain searchable, and unknown labels fall back to their IDs.
 
+To extract and prepare these local files from an installed Steam copy of the game, follow the [repository setup instructions](../README.md#prepare-local-game-data). The setup script accepts `-GamePath` when automatic Steam detection is not suitable.
+
 Run the C# regression checks from the repository folder:
 
 ```powershell

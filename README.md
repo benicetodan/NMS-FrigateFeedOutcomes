@@ -2,14 +2,25 @@
 
 A Windows WPF app that predicts living-frigate food outcomes from a save's resource seed. The app filters out bait and non-food curios, shows localized trait predictions and stat rankings, and links selected foods to their pages on [No Man's Sky Recipes](https://nomansskyrecipes.com/).
 
+## Prepare Local Game Data
+
+Requires a local No Man's Sky installation. On first use, the script downloads pinned extraction tools from GitHub to `%TEMP%` and verifies their SHA-256 hashes. From the repository root, run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\Prepare-GameData.ps1
+```
+
+The script detects a Steam installation automatically. For a different install location, pass its game folder explicitly:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\Prepare-GameData.ps1 -GamePath "D:\SteamLibrary\steamapps\common\No Man's Sky"
+```
+
+It generates the product, frigate-trait, and fleet-stat MXML tables plus an English localization JSON at the Git-ignored paths required by the app. Existing files are preserved; to replace them, add `-Force`. Keep these game-derived files out of commits.
+
 ## Build and Publish
 
-Requires the .NET 9 SDK on Windows. The game-derived MXML inputs are not included in this repository. Before building, place locally obtained files at these paths:
-
-- `data/nms_reality_gcproducttable.MXML`
-- `assets/metadata/reality/tables/frigatetraittable.MXML`
-- `assets/gcfleetglobals.global.MXML`
-- `windows-app/Core/Data/localization-en.json`
+Requires the .NET 9 SDK on Windows. Run the C# regression tests:
 
 Run the C# regression tests:
 
