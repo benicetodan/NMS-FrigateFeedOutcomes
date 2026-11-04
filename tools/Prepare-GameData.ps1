@@ -244,11 +244,18 @@ try {
     }
 
     New-Item -ItemType Directory -Force -Path $decodedRoot | Out-Null
-    foreach ($mbinFile in $mbinFiles) {
-        & $mbinCompiler "-d$decodedRoot" $mbinFile.FullName
-        if ($LASTEXITCODE -ne 0) {
-            throw "MBINCompiler failed for '$($mbinFile.Name)' with exit code $LASTEXITCODE."
+    $previousRollForward = $env:DOTNET_ROLL_FORWARD
+    $env:DOTNET_ROLL_FORWARD = 'Major'
+    try {
+        foreach ($mbinFile in $mbinFiles) {
+            & $mbinCompiler "-d$decodedRoot" $mbinFile.FullName
+            if ($LASTEXITCODE -ne 0) {
+                throw "MBINCompiler failed for '$($mbinFile.Name)' with exit code $LASTEXITCODE."
+            }
         }
+    }
+    finally {
+        $env:DOTNET_ROLL_FORWARD = $previousRollForward
     }
 
     $decodedFiles = @(Get-ChildItem -LiteralPath $decodedRoot -File -Filter '*.MXML')

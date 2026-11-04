@@ -20,7 +20,7 @@ It extracts the product, frigate-trait, and fleet-stat tables plus an English lo
 
 ## Build and Publish
 
-Requires the .NET 9 SDK on Windows. The C# regression tests need local game data. Prepare it with the command above, then run:
+Requires the .NET 10 SDK on Windows. The C# regression tests need local game data. Prepare it with the command above, then run:
 
 ```powershell
 dotnet run --project .\windows-app\Tests\NmsFrigateFeedOutcomes.Tests.csproj --configuration Release
