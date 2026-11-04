@@ -16,4 +16,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Core\NmsFrigateFeedOutcomes.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\tools\Prepare-GameData.ps1" Link="Prepare-GameData.ps1"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

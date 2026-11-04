@@ -11,7 +11,7 @@ namespace NmsFrigateFeedOutcomes.App;
 
 public partial class MainWindow : Window
 {
-    private readonly FeedPredictor _predictor = new();
+    private FeedPredictor? _predictor;
     private List<LivingFrigate> _frigates = [];
     private List<FoodOutcome> _outcomes = [];
     private ICollectionView? _outcomesView;
@@ -19,11 +19,32 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        StatusText.Text = "Open a save file and select a living frigate to compare food outcomes.";
+        StatusText.Text = "Preparing game data from the local installation. First launch may take a few minutes.";
+        Loaded += Window_Loaded;
+    }
+
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var gameDataRoot = await GameDataBootstrapper.EnsurePreparedAsync();
+            _predictor = new FeedPredictor(gameDataRoot);
+            OpenSaveButton.IsEnabled = true;
+            StatusText.Text = "Open a save file and select a living frigate to compare food outcomes.";
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"Could not prepare local game data: {exception.Message}";
+        }
     }
 
     private void OpenSave_Click(object sender, RoutedEventArgs e)
     {
+        if (_predictor is null)
+        {
+            return;
+        }
+
         var dialog = new OpenFileDialog
         {
             Title = "Open No Man's Sky save",
@@ -69,8 +90,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        var predictor = _predictor;
+        if (predictor is null)
+        {
+            return;
+        }
+
         ResourceSeedBox.Text = $"0x{frigate.ResourceSeed:X16}";
-        var currentTraitDetails = _predictor.DescribeTraits(frigate.TraitIds);
+        var currentTraitDetails = predictor.DescribeTraits(frigate.TraitIds);
         CurrentTraitsList.ItemsSource = currentTraitDetails;
         CurrentTraitsPlaceholder.Visibility = currentTraitDetails.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         CurrentTraitsPlaceholder.Text = currentTraitDetails.Count == 0
@@ -81,9 +108,15 @@ public partial class MainWindow : Window
 
     private void CalculateForFrigate(LivingFrigate frigate)
     {
+        var predictor = _predictor;
+        if (predictor is null)
+        {
+            return;
+        }
+
         try
         {
-            _outcomes = _predictor.Calculate(frigate.ResourceSeed, frigate.TraitSlots).ToList();
+            _outcomes = predictor.Calculate(frigate.ResourceSeed, frigate.TraitSlots).ToList();
             _outcomesView = CollectionViewSource.GetDefaultView(_outcomes);
             _outcomesView.Filter = FilterOutcome;
             ResultsGrid.ItemsSource = _outcomesView;
@@ -120,6 +153,11 @@ public partial class MainWindow : Window
         if (ResultsGrid.SelectedItem is not FoodOutcome outcome)
         {
             ClearSelectedOutcome();
+            return;
+        }
+
+        if (_predictor is null)
+        {
             return;
         }
 

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$GamePath,
-    [string]$OutputRoot = (Join-Path $PSScriptRoot '..'),
+    [string]$OutputRoot = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'NMS-FrigateFeedOutcomes\GameData'),
     [switch]$Force
 )
 

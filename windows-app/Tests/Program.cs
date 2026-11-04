@@ -17,7 +17,22 @@ if (args.Length == 2 && args[0] == "--inspect-save")
     return;
 }
 
-var predictor = new FeedPredictor();
+var repositoryRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+var localCacheRoot = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+    "NMS-FrigateFeedOutcomes",
+    "GameData");
+var cacheHasGameData = new[]
+{
+    Path.Combine("data", "nms_reality_gcproducttable.MXML"),
+    Path.Combine("assets", "metadata", "reality", "tables", "frigatetraittable.MXML"),
+    Path.Combine("assets", "gcfleetglobals.global.MXML"),
+    Path.Combine("windows-app", "Core", "Data", "localization-en.json")
+}.All(relativePath => File.Exists(Path.Combine(localCacheRoot, relativePath)));
+var gameDataRoot = cacheHasGameData
+    ? localCacheRoot
+    : repositoryRoot;
+var predictor = new FeedPredictor(gameDataRoot);
 const ulong resourceSeed = 0xBF577529BF2690DF;
 var outcomes = predictor.Calculate(resourceSeed, 5);
 if (outcomes.Any(outcome => outcome.FoodId.StartsWith("BAIT_", StringComparison.Ordinal)))

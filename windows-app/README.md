@@ -1,8 +1,8 @@
 # Frigate Feed Outcomes for Windows
 
-The WPF application is a standalone Windows x64 executable for living frigates, the only frigate class that can be fed. Building it requires local copies of the game-derived product, frigate-trait, and fleet-stat tables plus `Core\Data\localization-en.json`; these files are excluded from this repository. Once built, the published executable embeds them and does not need adjacent data files. Food and trait labels use an English localization subset; IDs remain searchable, and unknown labels fall back to their IDs.
+The WPF application is a Windows x64 app for living frigates, the only frigate class that can be fed. It does not bundle game-derived data. On first launch it detects a local Steam install, extracts the required tables from the game's PAK archives, and stores them under `%LOCALAPPDATA%\NMS-FrigateFeedOutcomes\GameData`. The extraction tools are cached under `%TEMP%`; the app reads the generated files locally. Keep `Prepare-GameData.ps1` beside the published executable because the app invokes it when preparing data. Food and trait labels use an English localization subset; IDs remain searchable, and unknown labels fall back to their IDs.
 
-To extract and prepare these local files from an installed Steam copy of the game, follow the [repository setup instructions](../README.md#prepare-local-game-data). The setup script accepts `-GamePath` when automatic Steam detection is not suitable.
+For manual preparation or to refresh data after a game update, follow the [repository setup instructions](../README.md#prepare-local-game-data). The setup script accepts `-GamePath` when automatic Steam detection is not suitable.
 
 Run the C# regression checks from the repository folder:
 

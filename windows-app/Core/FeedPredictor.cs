@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -55,13 +54,14 @@ public sealed class FeedPredictor
     private readonly Dictionary<string, string> _localizedNames;
     private readonly Dictionary<string, string> _localizedTraitNames;
 
-    public FeedPredictor()
+    public FeedPredictor(string gameDataRoot)
     {
-        _foods = ReadFoods(LoadXml("NmsFrigateFeedOutcomes.products.MXML"));
-        _traits = ReadTraits(LoadXml("NmsFrigateFeedOutcomes.traits.MXML"));
-        _statModifiers = ReadStatModifiers(LoadXml("NmsFrigateFeedOutcomes.globals.MXML"));
+        ArgumentException.ThrowIfNullOrWhiteSpace(gameDataRoot);
+        _foods = ReadFoods(LoadXml(Path.Combine(gameDataRoot, "data", "nms_reality_gcproducttable.MXML")));
+        _traits = ReadTraits(LoadXml(Path.Combine(gameDataRoot, "assets", "metadata", "reality", "tables", "frigatetraittable.MXML")));
+        _statModifiers = ReadStatModifiers(LoadXml(Path.Combine(gameDataRoot, "assets", "gcfleetglobals.global.MXML")));
         _traitsById = _traits.ToDictionary(trait => trait.Id, StringComparer.Ordinal);
-        _localizedNames = ReadLocalizedNames();
+        _localizedNames = ReadLocalizedNames(Path.Combine(gameDataRoot, "windows-app", "Core", "Data", "localization-en.json"));
         _localizedTraitNames = BuildLocalizedTraitNames();
     }
 
@@ -157,17 +157,15 @@ public sealed class FeedPredictor
         return result;
     }
 
-    private static XDocument LoadXml(string resourceName)
+    private static XDocument LoadXml(string path)
     {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
-            ?? throw new InvalidOperationException($"Embedded data resource not found: {resourceName}");
+        using var stream = File.OpenRead(path);
         return XDocument.Load(stream);
     }
 
-    private static Dictionary<string, string> ReadLocalizedNames()
+    private static Dictionary<string, string> ReadLocalizedNames(string path)
     {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("NmsFrigateFeedOutcomes.localization-en.json")
-            ?? throw new InvalidOperationException("Embedded English localization resource is missing.");
+        using var stream = File.OpenRead(path);
         return JsonSerializer.Deserialize<Dictionary<string, string>>(stream)
             ?? throw new InvalidDataException("English localization resource is empty.");
     }
