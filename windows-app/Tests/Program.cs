@@ -74,6 +74,30 @@ if (!dough.LocalizedTraits.StartsWith("Wormhole Navigation", StringComparison.Or
     throw new InvalidOperationException($"Trait localization mismatch: {dough.LocalizedTraits}");
 }
 
+var sampleFrigate = new LivingFrigate(
+    "Test frigate",
+    0xA514920A3FA29942,
+    ["^LIVING_TRA_PRI", "^LIVING_FUEL_S_2", "^LIVING_SPE_T_3", "^LIVING_TRA_S_2", "^LIVING_FUEL_S_4"],
+    [7, 6, 8, 28, 12, 15, 1, 0, 0, 0, 0]);
+var currentStats = predictor.DescribeStats(sampleFrigate);
+if (currentStats.Count != 6
+    || currentStats.Single(stat => stat.Name == "Combat") is not { Total: 7, Base: 7 }
+    || currentStats.Single(stat => stat.Name == "Trading") is not { Total: 28, Base: 7 }
+    || currentStats.Single(stat => stat.Name == "Fuel cost reduction") is not { Total: 15, Base: 0 }
+    || currentStats.Single(stat => stat.Name == "Duration reduction") is not { Total: 1, Base: 0 })
+{
+    throw new InvalidOperationException("Current and base stats did not match the sample frigate record.");
+}
+
+var potentialStats = predictor.CalculatePotentialStats(sampleFrigate, dough);
+if (potentialStats.Count != 6
+    || potentialStats.Single(stat => stat.Name == "Trading").Total != 7
+    || potentialStats.Single(stat => stat.Name == "Fuel cost reduction").Total != -dough.ExpeditionFuelCost
+    || potentialStats.Single(stat => stat.Name == "Duration reduction").Total != -dough.ExpeditionDuration)
+{
+    throw new InvalidOperationException("Potential stats did not use base values, predicted traits, and unchanged cost per warp.");
+}
+
 var oneSlotOutcomes = predictor.Calculate(resourceSeed, 1);
 foreach (var outcome in oneSlotOutcomes)
 {
@@ -126,9 +150,11 @@ try
         throw new InvalidOperationException("Hex-escaped JSON strings were not normalized correctly.");
     }
 
-    File.WriteAllText(temporarySavePath, """{"BaseContext":{"PlayerStateData":{"FleetFrigates":[{"FrigateClass":{"FrigateClass":"DeepSpaceCommon"},"ResourceSeed":[false,"0x0000000000000001"],"TraitIDs":[],"CustomName":"Test"}]}}}""");
+    File.WriteAllText(temporarySavePath, """{"BaseContext":{"PlayerStateData":{"FleetFrigates":[{"FrigateClass":{"FrigateClass":"DeepSpaceCommon"},"ResourceSeed":[false,"0x0000000000000001"],"TraitIDs":[],"Stats":[7,6,8,28,12,15,1,0,0,0,0],"CustomName":"Test"}]}}}""");
     var unflaggedSeedImport = NmsSaveFileReader.ReadLivingFrigates(temporarySavePath);
-    if (unflaggedSeedImport.Frigates.Count != 1 || unflaggedSeedImport.Frigates[0].ResourceSeed != 1)
+    if (unflaggedSeedImport.Frigates.Count != 1
+        || unflaggedSeedImport.Frigates[0].ResourceSeed != 1
+        || !unflaggedSeedImport.Frigates[0].Stats.SequenceEqual([7, 6, 8, 28, 12, 15, 1, 0, 0, 0, 0]))
     {
         throw new InvalidOperationException("A valid living-frigate seed was ignored because UseSeedValue was false.");
     }

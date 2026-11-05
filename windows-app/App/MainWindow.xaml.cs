@@ -86,6 +86,8 @@ public partial class MainWindow : Window
             ResourceSeedBox.Clear();
             CurrentTraitsList.ItemsSource = null;
             CurrentTraitsPlaceholder.Visibility = Visibility.Visible;
+            CurrentStatsList.ItemsSource = null;
+            CurrentStatsPlaceholder.Visibility = Visibility.Collapsed;
             ClearOutcomes();
             return;
         }
@@ -103,6 +105,9 @@ public partial class MainWindow : Window
         CurrentTraitsPlaceholder.Text = currentTraitDetails.Count == 0
             ? "No current traits were recorded."
             : "Select a frigate to inspect its traits.";
+        var currentStats = predictor.DescribeStats(frigate);
+        CurrentStatsList.ItemsSource = currentStats;
+        CurrentStatsPlaceholder.Visibility = currentStats.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         CalculateForFrigate(frigate);
     }
 
@@ -143,6 +148,8 @@ public partial class MainWindow : Window
     private void ClearSelectedOutcome()
     {
         SelectedTraitsList.ItemsSource = null;
+        SelectedStatsList.ItemsSource = null;
+        SelectedStatsPlaceholder.Visibility = Visibility.Collapsed;
         SelectedOutcomeHeader.Text = "Selected food outcome";
         SelectedTraitsPlaceholder.Visibility = Visibility.Visible;
         RecipeReferenceButton.IsEnabled = false;
@@ -161,6 +168,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (FrigateSelector.SelectedItem is not LivingFrigate frigate)
+        {
+            ClearSelectedOutcome();
+            return;
+        }
+
         SelectedOutcomeHeader.Text = outcome.FoodName;
         RecipeReferenceButton.IsEnabled = true;
         SelectedTraitsList.ItemsSource = _predictor.DescribeTraits(outcome.TraitIds);
@@ -168,7 +181,44 @@ public partial class MainWindow : Window
         SelectedTraitsPlaceholder.Text = outcome.TraitIds.Count == 0
             ? "This frigate has no predicted trait slots."
             : "Select a food row to inspect its traits.";
+        var potentialStats = _predictor.CalculatePotentialStats(frigate, outcome);
+        SelectedStatsList.ItemsSource = potentialStats;
+        SelectedStatsPlaceholder.Visibility = potentialStats.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    private void ResultsGrid_Sorting(object sender, DataGridSortingEventArgs e)
+    {
+        if (_outcomesView is null || string.IsNullOrWhiteSpace(e.Column.SortMemberPath))
+        {
+            return;
+        }
+
+        var direction = e.Column.SortDirection switch
+        {
+            null => IsHigherBetter(e.Column.SortMemberPath)
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending,
+            ListSortDirection.Ascending => ListSortDirection.Descending,
+            _ => ListSortDirection.Ascending
+        };
+
+        foreach (var column in ResultsGrid.Columns)
+        {
+            column.SortDirection = null;
+        }
+
+        e.Column.SortDirection = direction;
+        _outcomesView.SortDescriptions.Clear();
+        _outcomesView.SortDescriptions.Add(new SortDescription(e.Column.SortMemberPath, direction));
+        e.Handled = true;
+    }
+
+    private static bool IsHigherBetter(string sortMemberPath) => sortMemberPath is
+        nameof(FoodOutcome.Combat)
+        or nameof(FoodOutcome.Trading)
+        or nameof(FoodOutcome.Exploration)
+        or nameof(FoodOutcome.Mining)
+        or nameof(FoodOutcome.OverallScore);
 
     private void RecipeReference_Click(object sender, RoutedEventArgs e)
     {

@@ -25,12 +25,19 @@ public sealed record FoodOutcome(
 
 public sealed record TraitDetail(string Name, string StatBoost);
 
+public sealed record FrigateStatSummary(string Name, int Total, int? Base, string Unit)
+{
+    public string TotalDisplay => $"{Total}{Unit}";
+    public string BaseDisplay => Base is { } baseValue ? $"{baseValue}{Unit}" : "";
+}
+
 public sealed class FeedPredictor
 {
     private const ulong FeedMultiplier = unchecked(0UL - 0x622015F714C7D297UL);
     private const ulong RandomFinalMultiplier = unchecked(0UL - 0x1C955A39EC9ED669UL);
     private const uint RandomWordMultiplier = 0x5A76F899;
     private const ulong RandomMixMultiplier = 0x64DD81482CBD31D7;
+    private const int SavedFrigateStatCount = 11;
     private static readonly string[] PrimaryTraits =
     [
         "LIVING_COM_PRI",
@@ -45,6 +52,16 @@ public sealed class FeedPredictor
     [
         "Combat", "Exploration", "Mining", "Diplomacy", "Support", "Normandy",
         "DeepSpace", "DeepSpaceCommon", "Pirate", "GhostShip", "Swarm"
+    ];
+
+    private static readonly StatDefinition[] StatDefinitions =
+    [
+        new(0, "Combat", "Combat", ""),
+        new(1, "Exploration", "Exploration", ""),
+        new(2, "Mining", "Mining", ""),
+        new(3, "Diplomatic", "Trading", ""),
+        new(5, "FuelCapacity", "Fuel cost reduction", ""),
+        new(6, "Speed", "Duration reduction", "%")
     ];
 
     private readonly List<Food> _foods;
@@ -140,6 +157,39 @@ public sealed class FeedPredictor
                 GetLocalizedName(trait.NameKey, trait.Id),
                 value == 0 ? "No stat change" : $"{statName} {value:+#;-#;0}{unit}");
             }).ToArray();
+    }
+
+    public IReadOnlyList<FrigateStatSummary> DescribeStats(LivingFrigate frigate)
+    {
+        if (frigate.Stats.Count != SavedFrigateStatCount)
+        {
+            return Array.Empty<FrigateStatSummary>();
+        }
+
+        var modifiers = SumTraitModifiers(frigate.TraitIds);
+        return StatDefinitions.Select(definition =>
+        {
+            var total = frigate.Stats[definition.Index];
+            var baseValue = total - ToStoredModifier(definition.Type, modifiers.GetValueOrDefault(definition.Type));
+            return new FrigateStatSummary(definition.Name, total, baseValue, definition.Unit);
+        }).ToArray();
+    }
+
+    public IReadOnlyList<FrigateStatSummary> CalculatePotentialStats(LivingFrigate frigate, FoodOutcome outcome)
+    {
+        var currentStats = DescribeStats(frigate);
+        if (currentStats.Count == 0)
+        {
+            return Array.Empty<FrigateStatSummary>();
+        }
+
+        var modifiers = SumTraitModifiers(outcome.TraitIds);
+        return StatDefinitions.Select((definition, index) =>
+        {
+            var total = currentStats[index].Base!.Value
+                + ToStoredModifier(definition.Type, modifiers.GetValueOrDefault(definition.Type));
+            return new FrigateStatSummary(definition.Name, total, null, definition.Unit);
+        }).ToArray();
     }
 
     public static ulong ParseSeed(string value)
@@ -401,6 +451,25 @@ public sealed class FeedPredictor
             .Sum(GetModifierValue);
     }
 
+    private Dictionary<string, int> SumTraitModifiers(IEnumerable<string> traitIds)
+    {
+        var totals = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var rawTraitId in traitIds)
+        {
+            var traitId = rawTraitId.Trim().TrimStart('^');
+            if (!_traitsById.TryGetValue(traitId, out var trait)
+                && (!traitId.StartsWith("LIVING_", StringComparison.Ordinal)
+                    || !_traitsById.TryGetValue(traitId["LIVING_".Length..], out trait)))
+            {
+                continue;
+            }
+
+            totals[trait.Stat] = totals.GetValueOrDefault(trait.Stat) + GetModifierValue(trait);
+        }
+
+        return totals;
+    }
+
     private int GetModifierValue(Trait trait)
     {
         if (!_statModifiers.TryGetValue(trait.Stat, out var stat)
@@ -411,6 +480,11 @@ public sealed class FeedPredictor
 
         return stat.DisplayPositive ? rawValue : -rawValue;
     }
+
+    private int ToStoredModifier(string statType, int modifier) =>
+        _statModifiers.TryGetValue(statType, out var stat) && !stat.DisplayPositive
+            ? -modifier
+            : modifier;
 
     private static IReadOnlyList<FoodOutcome> RankOutcomes(List<FoodOutcome> outcomes)
     {
@@ -462,4 +536,5 @@ public sealed class FeedPredictor
     private sealed record Food(string Id, string NameKey);
     private sealed record Trait(string Id, string NameKey, string Stat, string Strength, Dictionary<string, int> Weights);
     private sealed record StatModifier(string LocalizationId, bool DisplayPositive, Dictionary<string, int> Alterations);
+    private sealed record StatDefinition(int Index, string Type, string Name, string Unit);
 }

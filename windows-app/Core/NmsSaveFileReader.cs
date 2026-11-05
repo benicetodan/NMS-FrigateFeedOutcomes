@@ -6,7 +6,11 @@ using System.Text.Json.Nodes;
 
 namespace NmsFrigateFeedOutcomes.Core;
 
-public sealed record LivingFrigate(string DisplayName, ulong ResourceSeed, IReadOnlyList<string> TraitIds)
+public sealed record LivingFrigate(
+    string DisplayName,
+    ulong ResourceSeed,
+    IReadOnlyList<string> TraitIds,
+    IReadOnlyList<int> Stats)
 {
     public int TraitSlots => TraitIds.Count;
 
@@ -173,6 +177,8 @@ public static class NmsSaveFileReader
                 throw new InvalidDataException("A living frigate has more than five TraitIDs in its save record.");
             }
 
+            var stats = ReadFrigateStats(frigate);
+
             var customName = frigate.TryGetProperty("CustomName", out var nameElement)
                 && nameElement.ValueKind == JsonValueKind.String
                     ? nameElement.GetString()?.Trim()
@@ -180,7 +186,7 @@ public static class NmsSaveFileReader
             var displayName = string.IsNullOrWhiteSpace(customName)
                 ? $"0x{resourceSeed:X16}"
                 : customName;
-            results.Add(new LivingFrigate(displayName, resourceSeed, traitIds));
+            results.Add(new LivingFrigate(displayName, resourceSeed, traitIds, stats));
         }
 
         return new LivingFrigateImport(results);
@@ -194,6 +200,25 @@ public static class NmsSaveFileReader
         }
 
         return property;
+    }
+
+    private static IReadOnlyList<int> ReadFrigateStats(JsonElement frigate)
+    {
+        if (!frigate.TryGetProperty("Stats", out var stats))
+        {
+            return Array.Empty<int>();
+        }
+
+        if (stats.ValueKind != JsonValueKind.Array || stats.GetArrayLength() != 11)
+        {
+            throw new InvalidDataException("A living frigate's Stats field must contain eleven values.");
+        }
+
+        return stats.EnumerateArray()
+            .Select(value => value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var stat)
+                ? stat
+                : throw new InvalidDataException("A living frigate Stats entry is not an integer."))
+            .ToArray();
     }
 
     private static ulong ReadGcSeed(JsonElement element)

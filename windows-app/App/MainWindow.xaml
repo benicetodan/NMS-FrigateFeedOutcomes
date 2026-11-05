@@ -66,6 +66,34 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <TextBlock Text="Current totals / base" FontSize="12" FontWeight="SemiBold" Foreground="#246B55" Margin="0,10,0,4" />
+                        <Grid Margin="0,0,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="58" />
+                                <ColumnDefinition Width="58" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="Total" FontSize="11" FontWeight="SemiBold" Foreground="#66716A" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="Base" FontSize="11" FontWeight="SemiBold" Foreground="#66716A" HorizontalAlignment="Right" />
+                        </Grid>
+                        <ItemsControl x:Name="CurrentStatsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="190" />
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="58" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" FontSize="12" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="1" Text="{Binding TotalDisplay}" FontSize="12" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="2" Text="{Binding BaseDisplay}" FontSize="12" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock x:Name="CurrentStatsPlaceholder" Text="Saved stat totals are unavailable for this frigate."
+                                   Foreground="#66716A" FontSize="12" Visibility="Collapsed" />
                     </StackPanel>
                     <Border Grid.Column="1" BorderBrush="#DCE2DC" BorderThickness="1,0,0,0" Padding="16,0,0,0">
                         <StackPanel>
@@ -92,6 +120,23 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                                <TextBlock Text="Potential totals" FontSize="12" FontWeight="SemiBold" Foreground="#246B55" Margin="0,10,0,4" />
+                                <ItemsControl x:Name="SelectedStatsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,1">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="58" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" FontSize="12" TextWrapping="Wrap" />
+                                                <TextBlock Grid.Column="1" Text="{Binding TotalDisplay}" FontSize="12" HorizontalAlignment="Right" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock x:Name="SelectedStatsPlaceholder" Text="Potential totals are unavailable without saved stat values."
+                                           Foreground="#66716A" FontSize="12" Visibility="Collapsed" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -115,7 +160,7 @@
                       Background="White" BorderBrush="#DCE2DC"
                       BorderThickness="1" SelectionMode="Single" SelectionUnit="FullRow"
                       EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
-                      SelectionChanged="ResultsGrid_SelectionChanged">
+                      SelectionChanged="ResultsGrid_SelectionChanged" Sorting="ResultsGrid_Sorting">
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Style.Triggers>
